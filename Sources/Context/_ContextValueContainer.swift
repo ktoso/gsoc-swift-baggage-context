@@ -65,17 +65,15 @@
 /// The baggage container on purpose does not expose more functions to prevent abuse and treating it as too much of an
 /// arbitrary value smuggling container, but only make it convenient for tracing and instrumentation systems which need
 /// to access either specific or all items carried inside a baggage.
-public struct Baggage {
-    public typealias Key = BaggageKey
+public struct _ContextValueContainer: Context {
+    public typealias Key = ContextValueContainerKey
 
-    private var _storage = [AnyBaggageKey: Any]()
+    private var _storage = [AnyContextValueContainerKey: Any]()
 
-    /// Internal on purpose, please use `Baggage.TODO` or `Baggage.background` to create an "empty" context,
-    /// which carries more meaning to other developers why an empty context was used.
-    init() {}
+    public init() {}
 }
 
-extension Baggage {
+extension _ContextValueContainer {
     /// Creates a new empty baggage, generally used for background processing tasks or an "initial" baggage to be immediately
     /// populated with some values by a framework or runtime.
     ///
@@ -99,12 +97,12 @@ extension Baggage {
     /// in order to inform other developers that the lack of context passing was not done on purpose, but rather because either
     /// not being sure where to obtain a context from, or other framework limitations -- e.g. the outer framework not being
     /// baggage context aware just yet.
-    public static var background: Baggage {
-        return Baggage()
-    }
+//    public static var background: Context {
+//        return Baggage()
+//    }
 }
 
-extension Baggage {
+extension _ContextValueContainer {
     /// A baggage intended as a placeholder until a real value can be passed through a function call.
     ///
     /// It should ONLY be used while prototyping or when the passing of the proper context is not yet possible,
@@ -126,25 +124,18 @@ extension Baggage {
     /// - Parameters:
     ///   - reason: Informational reason for developers, why a placeholder context was used instead of a proper one,
     /// - Returns: Empty "to-do" baggage context which should be eventually replaced with a carried through one, or `background`.
-    public static func TODO(_ reason: StaticString? = "", function: String = #function, file: String = #file, line: UInt = #line) -> Baggage {
-        var context = Baggage.background
-        #if BAGGAGE_CRASH_TODOS
-        fatalError("BAGGAGE_CRASH_TODOS: at \(file):\(line) (function \(function)), reason: \(reason)")
+    public static func TODO(_ reason: StaticString? = "", function: StaticString = #function, file: StaticString = #file, line: UInt = #line) -> Context {
+        var context = self.init()
+        #if CONTEXT_CRASH_TODOS
+        fatalError("CONTEXT_CRASH_TODOS: at \(file):\(line) (function \(function)), reason: \(reason)")
         #else
         context[TODOKey.self] = .init(file: file, line: line)
         return context
         #endif
     }
-
-    private enum TODOKey: BaggageKey {
-        typealias Value = TODOLocation
-        static var name: String? {
-            return "todo"
-        }
-    }
 }
 
-extension Baggage {
+extension _ContextValueContainer {
     /// Provides type-safe access to the baggage's values.
     ///
     /// Rather than using this subscript directly, users SHOULD offer a convenience accessor to their values,
@@ -167,14 +158,14 @@ extension Baggage {
     ///
     /// Note that specific baggage and context types MAY (and usually do), offer also a way to set baggage values,
     /// however in the most general case it is not required, as some frameworks may only be able to offer reading.
-    public subscript<Key: BaggageKey>(_ key: Key.Type) -> Key.Value? {
+    public subscript<Key: ContextValueContainerKey>(_ key: Key.Type) -> Key.Value? {
         get {
-            guard let value = self._storage[AnyBaggageKey(key)] else { return nil }
+            guard let value = self._storage[AnyContextValueContainerKey(key)] else { return nil }
             // safe to force-cast as this subscript is the only way to set a value.
             return (value as! Key.Value)
         }
         set {
-            self._storage[AnyBaggageKey(key)] = newValue
+            self._storage[AnyContextValueContainerKey(key)] = newValue
         }
     }
 
@@ -183,14 +174,14 @@ extension Baggage {
     /// Order of those invocations is NOT guaranteed and should not be relied on.
     ///
     /// - Parameter body: A closure invoked with the type erased key and value stored for the key in this baggage.
-    public func forEach(_ body: (AnyBaggageKey, Any) throws -> Void) rethrows {
+    public func forEach(_ body: (AnyContextValueContainerKey, Any) throws -> Void) rethrows {
         try self._storage.forEach { key, value in
             try body(key, value)
         }
     }
 }
 
-extension Baggage: CustomStringConvertible {
+extension _ContextValueContainer: CustomStringConvertible {
     /// A context's description prints only keys of the contained values.
     /// This is in order to prevent spilling a lot of detailed information of carried values accidentally.
     ///
@@ -201,11 +192,18 @@ extension Baggage: CustomStringConvertible {
     }
 }
 
-/// Carried automatically by a "to do" baggage context.
+internal enum TODOKey: ContextValueContainerKey {
+    typealias Value = TODOLocation
+    static var name: String? {
+        return "todo"
+    }
+}
+
+/// Carried automatically by a "to do" context.
 /// It can be used to track where a context originated and which "to do" context must be fixed into a real one to avoid this.
 public struct TODOLocation {
-    /// Source file location where the to-do `Baggage` was created
-    public let file: String
-    /// Source line location where the to-do `Baggage` was created
+    /// Source file location where the to-do `Context` was created
+    public let file: StaticString
+    /// Source line location where the to-do `Context` was created
     public let line: UInt
 }

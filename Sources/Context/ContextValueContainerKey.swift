@@ -11,19 +11,19 @@
 //
 //===----------------------------------------------------------------------===//
 
-/// `BaggageKey`s are used as keys in a `Baggage`. Their associated type `Value` guarantees type-safety.
-/// To give your `BaggageKey` an explicit name you may override the `name` property.
+/// `ContextValueContainerKey`s are used as keys in a `ContextValueContainers`. Their associated type `Value` guarantees type-safety.
+/// To give your `ContextValueContainerKey` an explicit name you may override the `name` property.
 ///
-/// In general, `BaggageKey`s should be `internal` or `private` to the part of a system using it.
+/// In general, `ContextValueContainerKey`s should be `internal` or `private` to the part of a system using it.
 ///
 /// All access to baggage items should be performed through an accessor computed property defined as shown below:
 ///
-///     private enum TestIDKey: Baggage.Key {
+///     private enum TestIDKey: ContextValueContainer.Key {
 ///         typealias Value = String
 ///         static var name: String? { "test-id" }
 ///     }
 ///
-///     extension Baggage {
+///     extension ContextValueContainer {
 ///         /// This is some useful property documentation.
 ///         var testID: String? {
 ///             get {
@@ -34,7 +34,14 @@
 ///             }
 ///         }
 ///     }
-public protocol BaggageKey {
+///
+/// It is also generally considered appropriate to define a new protocol that conforms to `Context` that provides access to the property rather than forcing
+/// access to underlying storage.
+///
+///     protocol LoggerContextCarrier: Context {
+///         var logger: Logger { get }
+///     }
+public protocol ContextValueContainerKey {
     /// The type of `Value` uniquely identified by this key.
     associatedtype Value
 
@@ -45,12 +52,12 @@ public protocol BaggageKey {
     static var name: String? { get }
 }
 
-extension BaggageKey {
+extension ContextValueContainerKey {
     public static var name: String? { return nil }
 }
 
-/// A type-erased `BaggageKey` used when iterating through the `Baggage` using its `forEach` method.
-public struct AnyBaggageKey {
+/// A type-erased `ContextValueContainerKey` used when iterating through the `ContextValueContainer` using its `forEach` method.
+public struct AnyContextValueContainerKey {
     /// The key's type represented erased to an `Any.Type`.
     public let keyType: Any.Type
 
@@ -62,14 +69,14 @@ public struct AnyBaggageKey {
         return self._name ?? String(describing: self.keyType.self)
     }
 
-    init<Key>(_ keyType: Key.Type) where Key: BaggageKey {
+    init<Key>(_ keyType: Key.Type) where Key: ContextValueContainerKey {
         self.keyType = keyType
         self._name = keyType.name
     }
 }
 
-extension AnyBaggageKey: Hashable {
-    public static func == (lhs: AnyBaggageKey, rhs: AnyBaggageKey) -> Bool {
+extension AnyContextValueContainerKey: Hashable {
+    public static func == (lhs: AnyContextValueContainerKey, rhs: AnyContextValueContainerKey) -> Bool {
         return ObjectIdentifier(lhs.keyType) == ObjectIdentifier(rhs.keyType)
     }
 

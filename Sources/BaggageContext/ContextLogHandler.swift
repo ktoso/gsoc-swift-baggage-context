@@ -138,13 +138,13 @@ public struct BaggageMetadataLogHandler: LogHandler {
     private func baggageAsMetadata() -> Logger.Metadata {
         var effectiveMetadata: Logger.Metadata = [:]
         self.baggage.forEach { key, value in
-            if let convertible = value as? String {
-                effectiveMetadata[key.name] = .string(convertible)
-            } else if let convertible = value as? CustomStringConvertible {
-                effectiveMetadata[key.name] = .stringConvertible(convertible)
-            } else {
-                effectiveMetadata[key.name] = .stringConvertible(BaggageValueCustomStringConvertible(value))
-            }
+            if case .public = key.access {
+                if let convertible = value as? String {
+                    effectiveMetadata[key.name] = .string(convertible)
+                } else {
+                    effectiveMetadata[key.name] = .stringConvertible(BaggageValueCustomStringConvertible(value))
+                }
+            } // else, the key is `publicExceptLogging`, so we must not log it.
         }
 
         return effectiveMetadata

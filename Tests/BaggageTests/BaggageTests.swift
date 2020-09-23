@@ -81,6 +81,7 @@ final class BaggageTests: XCTestCase {
 
 private enum TestIDKey: Baggage.Key {
     typealias Value = Int
+    static let access: BaggageAccessPolicy = .public
 }
 
 private extension Baggage {
@@ -96,6 +97,6 @@ private extension Baggage {
 
 private enum SecondTestIDKey: Baggage.Key {
     typealias Value = String
-
     static let nameOverride: String? = "ExplicitKeyName"
+    static let access: BaggageAccessPolicy = .public
 }

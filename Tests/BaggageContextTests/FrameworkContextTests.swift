@@ -59,6 +59,7 @@ private struct TestFrameworkContext: Context {
 
 private enum TestKey: Baggage.Key {
     typealias Value = Int
+    static let access: BaggageAccessPolicy = .public
 }
 
 extension Baggage {
@@ -74,6 +75,7 @@ extension Baggage {
 
 private enum OtherKey: Baggage.Key {
     typealias Value = String
+    static let access: BaggageAccessPolicy = .public
 }
 
 extension Baggage {

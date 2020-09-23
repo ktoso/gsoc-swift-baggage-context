@@ -137,9 +137,8 @@ extension Baggage {
 
     private enum TODOKey: BaggageKey {
         typealias Value = TODOLocation
-        static var nameOverride: String? {
-            return "todo"
-        }
+        static let access: BaggageAccessPolicy = .public
+        static let nameOverride: String? = "todo"
     }
 }
 
@@ -187,12 +186,14 @@ extension Baggage {
 
     /// Calls the given closure for each item contained in the underlying `Baggage`.
     ///
-    /// Order of those invocations is NOT guaranteed and should not be relied on.
     ///
     /// - Parameter body: A closure invoked with the type erased key and value stored for the key in this baggage.
+    /// - Warning: Order of those invocations is NOT guaranteed and should not be relied on.
     public func forEach(_ body: (AnyBaggageKey, Any) throws -> Void) rethrows {
         try self._storage.forEach { key, value in
-            try body(key, value)
+            if case .public = key.access {
+                try body(key, value)
+            } // else, the key is `publicExceptLogging`, so we must not log it.
         }
     }
 }

@@ -333,22 +333,27 @@ func log_materializeOnce(context: Context, iters remaining: Int) {
 
 private enum TestK1: BaggageKey {
     typealias Value = String
+    static let access: BaggageAccessPolicy = .public
 }
 
 private enum TestK2: BaggageKey {
     typealias Value = String
+    static let access: BaggageAccessPolicy = .public
 }
 
 private enum TestK3: BaggageKey {
     typealias Value = String
+    static let access: BaggageAccessPolicy = .public
 }
 
 private enum TestK4: BaggageKey {
     typealias Value = String
+    static let access: BaggageAccessPolicy = .public
 }
 
 private enum TestKD1: BaggageKey {
     typealias Value = [String: String]
+    static let access: BaggageAccessPolicy = .public
 }
 
 extension Baggage {
